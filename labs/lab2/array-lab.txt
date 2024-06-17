@@ -1,0 +1,36 @@
+1. A variable is a name that represents some data. This data can be a number, a word, or something else, and can be long or short. They are useful for avoiding repetition when performing calculations.
+
+2. Variables are polymorphic in the sense that a label could stand for all sorts of different types of data. However, once a variable is created, it can usually only hold one datum or collection of related data, the classification of which we call a "type." A variable cannot stand for multiple different things.
+
+3. A pointer is a special type of variable. Whereas "normal" variables are closely coupled with the data they represent, pointers simply "point" to some data elsewhere; the two are not necessarily linked.
+
+4. Since pointers are a subcategory of variables, they too are not strictly polymorphic. A pointer also has a type that limits the categories of data it can point to, and a single pointer can only refer to one datum or collection of related data.
+
+5. An array is a collection of related data. An array has one specific type and all of the data it contains must be of that type. Data in an array is sequential, though not necessarily ordered. Simple arrays also have a length that describes how much data they contain.
+
+6. Data in arrays are accessed using numbers (or "indices"). Since arrays are sequential, one can access the first, second, hundredth, etc. element with ease. This makes it easy to use arithmetic to determine which data to access in an array.
+
+7. Pointers, in the world of code, usually take the form of a number that describes some location in memory. This makes them a great choice for representing array elements, which are accessed using numbers and whose elements usually exist sequentially in memory. If you have a pointer that points to one array element, you need only increment the pointer to access the next element.
+
+8. One should be able to access and update array elements, at least. Deleting an array element can be useful, but relies heavily on implementation details (is there a specific value that represents nothing, or do we shift all the following array elements over?) Some prototypes include:
+
+get(index: num) -> T
+    where index is the index of the element to access
+    and which returns a value of type T, the type that the array holds
+
+update(index: num, new_value: T) -> nothing
+    where index is the index of the element to update
+    and new_value is the new value of that element, which must be of the same type as the array holds
+
+delete(index: num) -> nothing
+    where index is the index of the element to delete
+
+9. A two-dimensional array is an array whose elements are also arrays, whose elements are some concrete data. Whereas one might think of a one-dimensional array as a line with a given length, a two-dimensional array might be seen as a rectangle with a given width and height.
+
+10. Each element in a two-dimensional array has two indices -- its values within the total "width" and "height" of the array, so to speak.
+
+11. If one thinks of a two-dimensional array as a square, they can divide this square into blocks, where each block is an element and each row is a one-dimensional array. To relate each element in the two-dimensional array to the equivalent one-dimensional array, one need only separate each row and line them up from end to end. The blocks (elements) will remain in the same order, but they can now be accessed with only a single index.
+
+By following this method, the formula to produce a one-dimensional index using a two-dimensional pair of indices is rather simple:
+
+Given a desired row r and column c which form the indicies (r, c), along with the total number of columns C, the corresponding one-dimensional index is r * C + c.

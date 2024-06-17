@@ -1,0 +1,31 @@
+\documentclass[12pt, letterpaper]{article}
+
+\title{A1: Intro \\
+    \large Design Document \\
+    CSC 411 - Noah Daniels}
+\author{Marceline Kelly}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Data structures}
+\begin{itemize}
+    \item \verb|HashMap<String, Vec<String>>|
+    \begin{itemize}
+        \item Key: a \verb|String| representing a fingerprint
+        \item Value: a \verb|Vec<String>| containing each name associated with that fingerprint
+    \end{itemize}
+\end{itemize}
+
+\section{Invariants}
+\begin{enumerate}
+    \item Each fingerprint read thus far exists in the \verb|HashMap|.
+    \item The \verb|Vec| corresponding to each fingerprint contains all of the names read thus far that are associated with that fingerprint.
+\end{enumerate}
+
+\section{Method}
+To compute the final fingerprint groups, the program will iterate over each fingerprint in the \verb|HashMap|. For each fingerprint, the program will print all of the names in the corresponding \verb|Vec|, one per line, separating each group with a newline.
+
+\end{document}

@@ -1,0 +1,81 @@
+\documentclass[12pt, letterpaper]{article}
+
+\title{A2: III \\
+    \large Design Document \\
+    CSC 411 - Noah Daniels}
+\author{Marceline Kelly}
+
+\begin{document}
+
+\maketitle
+
+\section*{Design Checklist}
+
+\begin{enumerate}
+    \item \textbf{What is the abstract thing you are trying to represent?}
+
+    I am trying to represent a two-dimensional array or, in other words, a container of containers of values.
+
+    \item \textbf{What functions will you offer, and what are the contracts of that those
+    functions must meet?}
+
+    This 2D array will offer the following methods:
+
+    \begin{itemize}
+        \item \verb|from_single_value(value: T, width: usize, height: usize)| constructs an array of two given dimensions then sets each element to a predefined value.
+        \item \verb|from_row_major(vec: Vec<T>, width: usize)| constructs an array from a one-dimensional, row-major vector.
+        \item \verb|from_col_major(vec: Vec<T>, height: usize)| constructs an array from a one-dimensional, column-major vector.
+        \item \verb|at(&self, row: usize, col: usize) -> T| accesses individual elements.
+        \item \verb|iter_row_major(&self) -> Array2Iter<'_, T>| returns a row-major iterator of the array.
+        \item \verb|iter_col_major(&self) -> Array2Iter<'_, T>| returns a column-major iterator of the array.
+    \end{itemize}
+
+    \item \textbf{What examples do you have of what the functions are supposed to do?}
+    
+    \begin{verbatim}
+        let vec = vec![1,2,3,4,5,6];
+        let ARRAY2 = Array2::from_row_major(vec, 3);
+        // ARRAY2 now contains {{1, 2, 3}, {4, 5, 6}}
+
+        let val = ARRAY2.at(1, 1); // val == 5
+
+        for value in ARRAY2.iter_col_major() {
+            print!("{value} ");
+        }
+        // prints "1 4 2 5 3 6"
+    \end{verbatim}
+
+    \item \textbf{What representation will you use, and what invariants will it satisfy?}
+    
+    \verb|Array2| will be built upon a vector of vectors (i.e. \verb|Vec<Vec<T>>|). It will satisfy the following invariants:
+
+    \begin{itemize}
+        \item Any instance of \verb|Array2| with type \verb|T| will have a concrete width and height, each greater than zero. Each element will be a value of type \verb|T|.
+        \item Row-major and column-major iterators may be requested from an \verb|Array2| regardless of the type of \verb|Vec| used to initialize the array (or the underlying implementation).
+        \item Requesting the value at coordinates \verb|(x, y)| will produce the value at the \verb|y|th element of the \verb|x|th \verb|Vec| within the root \verb|Vec|. \verb|x| and \verb|y| are both zero-indexed.
+    \end{itemize}
+
+    \item \textbf{When a representation satisfies all invariants, what abstract thing from
+    step 1 does it represent?}
+
+    Nested vectors function as a "container of containers." Each of these sub-containers must contain some value, hence a "container of containers of values."
+
+    \item \textbf{What test cases have you devised?}
+    
+    \begin{itemize}
+        \item A \verb|Array2| built from the row-major \verb|Vec| \verb|[1, 2, 3, 4]| should return the same \verb|Vec| when its row-major iterator is \verb|collect|ed.
+        \item A \verb|Array2| built from the column-major \verb|Vec| \verb|[1, 2, 3, 4]| should return the same \verb|Vec| when its column-major iterator is \verb|collect|ed.
+
+        \item a \verb|Array2| built from the row-major \verb|Vec| \verb|[1, 2, 3, 4]| should be equivalent to one built from the column-major \verb|Vec| \verb|[1, 3, 2, 4]|
+    \end{itemize}
+    
+    \item \textbf{What programming idioms will you need?}
+    
+    \begin{itemize}
+        \item Creating polymorphic \verb|struct|s using generic types
+        \item Generating iterators from collection types
+    \end{itemize}
+
+\end{enumerate}
+
+\end{document}

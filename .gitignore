@@ -1,0 +1,15 @@
+.vscode/
+.idea/
+*.zip
+*.ppm
+*.pgm
+*.jpg
+*.png
+target/
+Cargo.lock
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+_minted-design/

@@ -1,0 +1,68 @@
+\documentclass[12pt, letterpaper]{article}
+
+\usepackage{gensymb}
+\usepackage{graphicx}
+
+\graphicspath{ {./} }
+
+\title{A3: locality \\
+    \large Design Document \\
+    CSC 411 - Noah Daniels}
+\author{Marceline Kelly and Nicolas Leffray}
+
+\begin{document}
+
+\maketitle
+
+\section*{What invariant properties should hold during the solution of the problem?}
+
+\begin{itemize}
+    \item Every pixel in the source image should correspond to one and only one pixel in the destination image.
+\end{itemize}
+
+\section*{What are the major components of your program, and what are their interfaces?}
+
+\subsection*{Data structures}
+
+\begin{itemize}
+    \item \verb|src|: an \verb|Array2| built from the input image.
+    \item \verb|dest|: an \verb|Array2| containing the transformed output image.
+\end{itemize}
+
+\subsection*{Functions}
+
+Each operation (except for the trivial "rotate by 0\degree") will have its own function.
+Each function will simply accept a source \verb|Array2| and output a transformed \verb|Array2|. 
+
+\begin{itemize}
+    \item \verb|rotate90|: translates the pixel at $(i, j)$ to $(h-j-1, i)$
+    \item \verb|rotate180|: translates the pixel at $(i, j)$ to $(w-i-1, h-j-1)$
+    \item \verb|rotate270|: translates the pixel at $(i, j)$ to $(w-i-1, j)$
+    \item \verb|flip_horizontal|: translates the pixel at $(i, j)$ to $(w-i, j)$
+    \item \verb|flip_vertical|: translates the pixel at $(i, j)$ to $(i, h-j)$
+    \item \verb|transpose|: translates the pixel at $(i, j)$ to $(j, i)$
+\end{itemize}
+
+\section*{What test cases will you use to convince yourself that your program works?}
+
+\begin{itemize}
+    \item Choose a pixel from the source image using a given coordinate set. Then, use the appropriate formula to determine the corresponding index in the transformed image.
+    After performing the transformation, test if the brightness value at each of the coordinate sets is the same.
+    \begin{itemize}
+        \item For maximum efficacy, each pixel should have a unique brightness value in the source image.
+        This prevents cases where each pixel happens to have the same brightness, despite the image being transformed incorrectly.
+        \item Of course, each operation would have its own test case that incorporates this idea.
+    \end{itemize}
+\end{itemize}
+
+\section*{What arguments will you use to convince a skeptical audience that your program works?}
+
+Each transformation involves a sequence of arithmetic operations to produce an output image.
+These operations are easy to independently verify by anyone reviewing the program.
+Further, the program will incorporate a suite of test cases to computationally verify the output of each transformation.
+These test cases verify that the primary invariant holds true for each transformation.
+
+\section*{Visual explanation of transform functions}
+\includegraphics[angle=-90, width=\textwidth]{whiteboard.jpg}
+
+\end{document}

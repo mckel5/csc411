@@ -1,0 +1,21 @@
+\contentsline {section}{\numberline {1}Overview}{2}{}%
+\contentsline {section}{\numberline {2}Architecture}{2}{}%
+\contentsline {subsection}{\numberline {2.1}PPM modification}{2}{}%
+\contentsline {subsubsection}{\numberline {2.1.1}Functions}{3}{}%
+\contentsline {subsubsection}{\numberline {2.1.2}Test cases}{3}{}%
+\contentsline {subsection}{\numberline {2.2}Normalized RGB representation}{3}{}%
+\contentsline {subsubsection}{\numberline {2.2.1}Types}{3}{}%
+\contentsline {subsubsection}{\numberline {2.2.2}Functions}{3}{}%
+\contentsline {subsubsection}{\numberline {2.2.3}Test cases}{4}{}%
+\contentsline {subsection}{\numberline {2.3}Component video representation}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.1}Types}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.2}Functions}{4}{}%
+\contentsline {subsubsection}{\numberline {2.3.3}Test cases}{5}{}%
+\contentsline {subsection}{\numberline {2.4}Discrete cosine transformation}{5}{}%
+\contentsline {subsubsection}{\numberline {2.4.1}Types}{6}{}%
+\contentsline {subsubsection}{\numberline {2.4.2}Functions}{6}{}%
+\contentsline {subsubsection}{\numberline {2.4.3}Test cases}{6}{}%
+\contentsline {subsection}{\numberline {2.5}Quantization \& bit-packing}{6}{}%
+\contentsline {subsubsection}{\numberline {2.5.1}Functions}{7}{}%
+\contentsline {subsubsection}{\numberline {2.5.2}Test cases}{7}{}%
+\contentsline {section}{\numberline {3}Information Loss}{8}{}%

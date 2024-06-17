@@ -1,0 +1,328 @@
+\documentclass[12pt, letterpaper]{article}
+\usepackage{amsmath}
+\usepackage{minted}
+\usepackage[skip=6pt plus2pt, indent=0pt]{parskip}
+
+\title{A4: arith \\
+\large Design Document \\
+CSC 411 - Noah Daniels}
+\author{Marceline Kelly}
+
+\begin{document}
+
+    \maketitle
+
+    \tableofcontents
+
+
+    \section{Overview}
+
+    The goal of this assignment is to create a functional image compressor.
+    The program contains the following modules:
+
+    \begin{itemize}
+        \item \verb|rpeg|: Handles image compression and decompression.
+        \item \verb|bitpack|: Facilitates storing data in abstract words.
+        \item \verb|array2|: An intermediate collection format passed between operations.
+    \end{itemize}
+
+    The compression algorithm is composed of the following steps:
+
+    \begin{enumerate}
+        \item Read a PPM image.
+        \item Normalize each RGB pixel to a set of values between 0 and 1.
+        \item Convert the normalized image to component-video format.
+        \item Compress 2x2 blocks of component pixels using discrete cosine transformations.
+        \item Pack the compressed data into a series of 32-bit words.
+        \subitem This operation makes extensive use of the \verb|bitpack| crate.
+        \item Write the compressed image.
+    \end{enumerate}
+
+    The steps are reversed for the decompression algorithm, with some minor alterations.
+    Each step will have its own set of unit tests to ensure that all parts of the algorithm function correctly.
+
+
+    \section{Architecture}
+
+    This program is built upon the \verb|Array2| data structure.
+    Each operation takes in an \verb|Array2| and produces a new \verb|Array2|, except when directly reading from or
+    writing to an output stream.
+
+    \subsection{PPM modification}
+
+    PPM images serve as both the input and output of this program.
+    In order to work with the compression algorithm, all images must have an even width and height.
+    If the input image has an odd number of rows, we drop the bottommost row; the same applies for the
+    rightmost column.
+
+    \subsubsection{Functions}
+
+    \mint{rust}|fn trim_image(img: Array2<Rgb>) -> Array2<Rgb>|
+
+    Returns a copy of the image sans the last row and/or column if \verb|height| and/or \verb|width| is odd.
+
+    \subsubsection{Test cases}
+
+    \begin{itemize}
+        \item Each dimension of the output image should be equal to or one less than the respective dimension of the
+        input image.
+        \item An iterator over the input array minus the dropped elements is equivalent to an iterator over the output
+        array.
+        That is, both elements at a given position are identical.
+    \end{itemize}
+
+    \subsection{Normalized RGB representation}
+
+    A hallmark trait of the PPM format is the variable denominator (the maximum allowed brightness value).
+    For consistency, we normalize this value to 1, followed by scaling each red, green, and blue sub-pixel in the image
+    to the appropriate value between 0 and 1.
+
+    \subsubsection{Types}
+
+    \verb|NormalizedRgb|
+
+    An RGB pixel where each value is a floating-point number between 0 and 1.
+
+    \subsubsection{Functions}
+
+    \mint{rust}|fn normalize_rgb(input: Rgb) -> NormalizedRgb|
+
+    Scales each $R$, $G$, and $B$ value between 0 and 1 based on its proximity to the denominator (represented as 1).
+
+    \mint{rust}|fn denormalize_rgb(input: NormalizedRgb) -> Rgb|
+
+    Multiplies each normalized $R$, $G$, and $B$ value by 255 then rounds to the nearest integer.
+
+    \subsubsection{Test cases}
+
+    \begin{itemize}
+        \item Normalization: given a denominator $d$, a \verb|Rgb| \{$R$: 0, $G$: $\frac{d}{2}$, $B$: $d$\} becomes a
+        \verb|NormalizedRgb| \{$R'$: 0.0, $G'$: 0.5, $B'$: 1.0\}, no matter the value of $d$.
+        \item Denormalization: a \verb|NormalizedRgb| \{$R$: 0.0, $G$: 0.5, $B$: 1.0\} becomes
+        \verb|Rgb| \{$R'$: 0, $G'$: 128, $B'$: 255\}.
+        \item All values in a \verb|NormalizedRgb| fall between 0 and 1.
+        \item All values in a denormalized \verb|Rgb| fall between 0 and 255.
+    \end{itemize}
+
+    \subsection{Component video representation}
+
+    Our compression algorithm requires that images be stored in component video format ($Y$, $P_B$, $P_R$).
+    To convert from the floating-point RGB values to component, we apply the following formula:
+    \begin{align*}
+        \begin{pmatrix}
+            Y   \\
+            P_B \\
+            P_R
+        \end{pmatrix}
+        =
+        \begin{pmatrix}
+            0.299     & 0.587     & 0.114     \\
+            -0.168736 & -0.331264 & 0.5       \\
+            0.5       & -0.418688 & -0.081312
+        \end{pmatrix}
+        \begin{pmatrix}
+            R \\
+            G \\
+            B
+        \end{pmatrix}
+    \end{align*}
+
+    Undoing this formula follows a similar process:
+    \begin{align*}
+        \begin{pmatrix}
+            R \\
+            G \\
+            B
+        \end{pmatrix}
+        =
+        \begin{pmatrix}
+            1.0 & 0.0       & 1.402     \\
+            1.0 & -0.344136 & -0.714136 \\
+            1.0 & 1.772     & 0.0
+        \end{pmatrix}
+        \begin{pmatrix}
+            Y   \\
+            P_B \\
+            P_R
+        \end{pmatrix}
+    \end{align*}
+
+    \subsubsection{Types}
+
+    \verb|Component|
+
+    A component video pixel consisting of luma ($Y$) and chroma ($P_B$, $P_R$) floating-point values.
+
+    \subsubsection{Functions}
+
+    \mint{rust}|fn normal_rgb_to_component(input: NormalizedRgb) -> Component|
+
+    Transforms a normalized RGB triple into a component triple.
+
+    \mint{rust}|fn component_to_normal_rgb(input: Component) -> NormalizedRgb|
+
+    Transforms a component triple into a normalized RGB triple.
+
+    \subsubsection{Test cases}
+
+    \begin{itemize}
+        \item RGB to component: a \verb|NormalizedRgb| produces a
+        \verb|Component| whose values match with known, expected results.
+        \item Component to RGB: a \verb|Component| produces a
+        \verb|NormalizedRgb| whose values match with known, expected results.
+        \item $Y$ falls between 0 and 1.
+        \item $P_B$ and $P_R$ fall between -0.5 and 0.5.
+    \end{itemize}
+
+    \subsection{Discrete cosine transformation}
+
+    The actual compression of the image begins during this step.
+    Given a 2x2 block of component values, we separate each luma value ($Y_1$, $Y_2$, $Y_3$, $Y_4$)
+    then average the $P_B$ ($\overline{P_B}$) and $P_R$ ($\overline{P_R}$) values.
+
+    We then gather four coefficients, $a$, $b$, $c$, and $d$, using the following discrete cosine formulas:
+    \begin{align*}
+        a &= (Y_4 + Y_3 + Y_2 + Y_1) / 4.0 \\
+        b &= (Y_4 + Y_3 - Y_2 - Y_1) / 4.0 \\
+        c &= (Y_4 - Y_3 + Y_2 - Y_1) / 4.0 \\
+        d &= (Y_4 - Y_3 - Y_2 + Y_1) / 4.0
+    \end{align*}
+
+    Finally, we produce a \verb|CompressedBlock| that contains each of the four coefficients as well as the two
+    average chroma values.
+
+    To return a compressed block of pixels to its original composite form, we first calculate the following values
+    using inverse discrete cosine formulas:
+    \begin{align*}
+        Y_1 &= a - b - c + d \\
+        Y_2 &= a - b + c - d \\
+        Y_3 &= a + b - c - d \\
+        Y_4 &= a + b + c + d
+    \end{align*}
+
+    Then, we produce four composite pixels of the form ($Y_i$, $\overline{P_B}$, $\overline{P_R}$).
+    Notice that each pixel uses the same pair of chroma values.
+
+    \subsubsection{Types}
+
+    \verb|CompressedBlock|
+
+    A 2x2 block of pixels containing four floating-point luma coefficients ($a$, $b$, $c$, $d$) and two averaged
+    floating-point chroma values ($\overline{P_B}$, $\overline{P_R}$).
+
+    \subsubsection{Functions}
+
+    \mint{rust}|fn compress_block(input: Array2<Component>) -> CompressedBlock|
+
+    Transforms a 2x2 array of component pixels into a single set of chroma averages and luma coefficients.
+
+    \mint{rust}|fn decompress_block(input: CompressedBlock) -> Array2<Component>|
+
+    Transforms a block of chroma averages and luma coefficients into a 2x2 array of component pixels.
+
+    \subsubsection{Test cases}
+
+    \begin{itemize}
+        \item The discrete cosine transformation produces proper results when tested against known values.
+        \item $a$ falls between 0 and 1.
+        \item $b$, $c$, and $d$ each fall between -0.5 and 0.5.
+        \item The inverse discrete cosine transformation produces proper results when tested against known values.
+        \item All $P_B$ values within a decompressed set of component pixels are identical.
+        Likewise with $P_R$.
+        \item $P_B$ and $P_R$ fall between -0.5 and 0.5.
+        \item All four $Y$ values fall between 0 and 1.
+
+    \end{itemize}
+
+    \subsection{Quantization \& bit-packing}
+
+    This part comprises the second compression step.
+    To store each compressed block into a single 32-bit word, we must quantize some of the values.
+    Since $a$ always lies between 0 and 1, we can convert it into a 9-bit, unsigned integer by multiplying by 511
+    then rounding.
+
+    To quantize $b$, $c$, and $d$, we clamp each of the values between -0.3 and 0.3.
+    Then, we multiply each value by 15 and round to the nearest integer to produce three signed integers between -15
+    and 15.
+    Each of these can fit into 5 bits in our 32-bit word.
+
+    Finally, we convert the average chroma values into two unsigned index values using the
+    \verb|csc411_arith::index_of_chroma| function, each of which use 4 bits.
+
+    Using the \verb|bitpack| crate, these values get stored into a 32-bit word in the following order:
+
+    ($a$ x 9 bits, $b$ x 5 bits, $c$ x 5 bits, $d$ x 5 bits, $P_B$ x 4 bits, $P_R$ x 4 bits)
+
+    At last, the compression is complete.
+    Each of these words will be combined and output in our proprietary image compression format.
+
+    To decompress a 32-bit word, we simply perform the inverse calculations on the bit-packed $a$, $b$, $c$, and $d$
+    integers.
+    For the indexed chroma averages, we use the \verb|chroma_of_index| function to undo
+    the index calculation.
+
+    \subsubsection{Functions}
+
+    \mint{rust}|fn pack_word(input: CompressedBlock) -> u32|
+
+    Packs the values of a compressed block of pixels into a single, 32-bit word.
+
+    \mint{rust}|fn unpack_word(input: u32) -> CompressedBlock|
+
+    Unpacks a 32-bit word into a compressed block of pixels.
+
+    The functions in the \verb|bitpack| crate are used within each of these functions but are not listed for brevity.
+
+    \subsubsection{Test cases}
+
+    \begin{itemize}
+        \item A left or right shift by 64 bits yields all zeroes.
+        \item When \verb|news| is given a \verb|value| that does not fit in \verb|width| signed bits, it
+        returns \verb|None|.
+        \item When \verb|newu| is given a \verb|value| that does not fit in \verb|width| unsigned bits, it
+        returns \verb|None|.
+        \item For non-error values, \\
+        \verb|getu(newu(word, w, lsb, val).unwrap(), w, lsb) == val|.
+        \item If \verb|lsb2 >= w + lsb|, then \\
+        \verb|getu(newu(word, w, lsb, val), w2, lsb2) == getu(word, w2, lsb2)|
+        \item The previous two tests apply to the signed variants, as well.
+    \end{itemize}
+
+
+    \section{Information Loss}
+
+    The following operations cause data loss within this compression algorithm:
+
+    \begin{enumerate}
+        \item Trimming extraneous rows and columns
+        \begin{itemize}
+            \item Occurs only once
+            \item Insignificant for large images
+        \end{itemize}
+        \item Normalizing each RGB value
+        \begin{itemize}
+            \item Occurs only once
+            \item The PPM denominator is set to 255 during decompression, leading to a loss in fidelity for images with
+            a denominator \textgreater 255
+        \end{itemize}
+        \item Averaging $P_B$ and $P_R$
+        \begin{itemize}
+            \item Occurs repeatedly
+        \end{itemize}
+        \item Converting luma coefficients to integers
+        \begin{itemize}
+            \item Occurs repeatedly
+            \item Involves clamping $b$, $c$, and $d$ as well as rounding to the nearest integer after multiplication
+        \end{itemize}
+        \item Converting chroma averages to integers
+        \begin{itemize}
+            \item Occurs repeatedly
+        \end{itemize}
+    \end{enumerate}
+
+    \vfill
+    \begin{center}
+        \tiny{All hail the ferrets.}
+    \end{center}
+
+\end{document}
