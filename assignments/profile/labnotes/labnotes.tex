@@ -1,0 +1,44 @@
+\documentclass{article}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{tabulary}
+
+\title{\textbf{Profiling Lab Notes}}
+\author{Marceline Kelly}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Improvements}
+
+\begin{tabulary}{\textwidth}{lrrrL}
+    Benchmark & Time & Rel to start & Rel to prev & Improvement                                                     \\
+    \hline
+    midmark   & 13s  & 1.000        & 1.000       & ---                                                             \\
+    sandmark  & 245s & 1.000        & 1.000       &                                                                 \\
+    advent    & 1hr+ & 1.000        & 1.000       &                                                                 \\
+    \hline
+    midmark   & 13s  & 1.000        & 1.000       & Enable LTO                                                      \\
+    sandmark  & 244s & 0.996        & 0.996       &                                                                 \\
+    advent    & 1hr+ & 1.000        & 1.000       &                                                                 \\
+    \hline
+    midmark   & 3.3s & 0.253        & 0.253       & Avoid reinitializing (cloning) `memory[0]' if performing a jump \\
+    sandmark  & 54s  & 0.220        & 0.221       &                                                                 \\
+    advent    & 11s  & 0.003        & 0.003       &                                                                 \\
+    \hline
+    midmark   & 2.6s & 0.2          & 0.788       & Use HashMap for memory instead of BTreeMap                      \\
+    sandmark  & 43s  & 0.176        & 0.796       &                                                                 \\
+    advent    & 12s  & 0.003        & 1.091       &                                                                 \\
+    \hline
+    midmark   & 1.3s & 0.1          & 0.5         & Use "no-hash" hashing algorithm for memory map                  \\
+    sandmark  & 24s  & 0.098        & 0.558       &                                                                 \\
+    advent    & 6.7s & 0.002        & 0.558       &                                                                 \\
+    \hline
+    midmark   & 0.4s & 0.031        & 0.301       & Use Vec for memory instead of HashMap (improves cache hit rate) \\
+    sandmark  & 11s  & 0.045        & 0.458       &                                                                 \\
+    advent    & 2.2s & 0.001        & 0.328       &                                                                 \\
+    \hline
+\end{tabulary}
+
+\end{document}

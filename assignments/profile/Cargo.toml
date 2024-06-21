@@ -1,0 +1,17 @@
+[package]
+name = "rum"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+nohash-hasher = "0.2.0"
+num-derive = "0.4.1"
+num-traits = "0.2.17"
+rand = "0.8.5"
+
+[profile.profiling]
+inherits = "release"
+debug = true
+lto = true

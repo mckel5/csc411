@@ -1,0 +1,158 @@
+\documentclass{article}
+\renewcommand{\familydefault}{\sfdefault}
+
+\title{\textbf{A5: rum} \\ \Large Design Documentation \\ CSC 411}
+\date{November 17, 2023}
+\author{Marceline Kelly}
+
+\begin{document}
+
+\maketitle
+
+% The documentation of your design should include
+% the representation of segments and its invariants.
+% • the architecture and test plan.
+
+% For this assignment in particular, we have high expectations for your test plan.
+% In this assignment we are raising the bar for your design work:
+
+% • Excellent design documentation will say what data structure will be used
+% to represent each part of the state of a Universal Machine, and where that
+% data structure will be stored.
+
+% • Excellent design documentation will show how the parts will be organized,
+% and in particular, how the implementation of the Universal Machine will
+% be decoupled from the program loader and the main() function, so that
+% the Universal Machine can be unit tested.
+
+\section{Overview}
+
+This assignment involves the creation of a primitive virtual machine.
+This machine has two forms of memory: a set of eight registers that the virtual processor can directly access as well as a segmented memory space.
+Each segment contains a series of words that can be accessed using a unique identifier.
+The machine can execute programs constructed from a basic set of instructions, loaded from the "Universal Machine" binary format.
+The machine also supports basic ASCII input and output, akin to standard I/O on a modern machine.
+
+\section{Memory Segments}
+
+One might initially consider representing the VM's memory using a statically-sized array.
+While this would incur a substantial up-front allocation cost, accessing memory during execution would be relatively performant.
+The problem with this approach, however, is that our memory segments do not have a fixed size.
+
+As a result, a dynamically-sized structure is a better option, in this case.
+This structure must also be indexed and iterable (sorry, hash tables).
+Considering that each word is a 32-bit integer, it makes sense that a segment would take the form of a \verb|Vec| of \verb|u32|'s.
+
+We can apply this thought process to our general memory space as well, representing it as a large \verb|Vec|.
+Noting that memory can be unmapped at will and in no particular order, we consider any segment with length 0 (an empty segment) to be "free" and able to store new data.
+To free a segment, then, is simply to clear the \verb|Vec| that represents it.
+Conversely, the size of a memory segment is equal to the number of elements in its \verb|Vec|.
+As the program requires more memory, more segments can be allocated on the fly.
+
+This yields the layout:
+
+\begin{itemize}
+    \item \verb|Word|: \verb|u32|
+    \item \verb|Segment|: \verb|Vec<Word>|
+    \item \verb|Memory|: \verb|Vec<Segment>|
+\end{itemize}
+
+This segmented memory is accompanied by a program counter (a \verb|Word|) and eight registers (stored in a \verb|Word| array).
+As such, the machine's state is stored almost entirely on the heap, save for the program counter and registers, which live on the stack.
+This dynamic structure ensures that the VM will be able to handle the needs of almost any UM program provided.
+
+\subsection{Invariants}
+
+\begin{enumerate}
+    \item The memory segment at index 0 stores the program and is always mapped.
+    \item The program counter holds a value between 0 and $n - 1$, where $n$ is the length of the program in words.
+    \item In any segment that has been initialized but has not yet received any data, all words equal zero.
+\end{enumerate}
+
+\section{Architecture}
+
+The program will consist of the following modules:
+
+\begin{enumerate}
+    \item \verb|rumload|
+          \begin{itemize}
+              \item Unpacks the raw binary file into a series of 32-bit instruction words
+          \end{itemize}
+    \item \verb|rumdis|
+          \begin{itemize}
+              \item Separates each instruction provided by \verb|rumload| into an opcode and associated values
+          \end{itemize}
+    \item \verb|rummem|
+          \begin{itemize}
+              \item Allocates and manages the memory of the virtual machine (both registers and segment space)
+              \item Loads the operations provided by \verb|rumdis| into virtual memory
+          \end{itemize}
+    \item \verb|rumrun|
+          \begin{itemize}
+              \item Executes the loaded program
+              \item Interfaces with \verb|rummem| for memory management
+              \item Keeps track of the current instruction via the program counter
+          \end{itemize}
+    \item \verb|rumio|
+          \begin{itemize}
+              \item Accepts data from standard input
+              \item Sends data to standard output
+          \end{itemize}
+    \item \verb|main|
+          \begin{itemize}
+              \item The entry point of the program
+              \item Coordinates the primary control flow of the program
+          \end{itemize}
+\end{enumerate}
+
+\section{Test Plan}
+
+\subsection{Unit testing}
+
+This program will support a rigorous suite of unit tests.
+These tests are designed to ensure that each individual function operates as expected.
+They also test the program's behavior
+
+\subsubsection{rumload}
+
+\begin{itemize}
+    \item Is the size of the loaded data exactly the same as that of the input data?
+    \item Is each word unmodified from its representation on disk?
+\end{itemize}
+
+\subsubsection{rumdis}
+
+\begin{itemize}
+    \item Does the program halt gracefully when presented with an invalid opcode (14 or 15)?
+\end{itemize}
+
+\subsubsection{rummem}
+
+\begin{itemize}
+    \item If a UM program requests resources that are not available, does execution halt in the expected manner?
+    \item Does the program correctly re-use unmapped memory?
+    \item When more memory is requested, does the program map the first (from index 1) free segment?
+          % \item Is the unloading of segment 0 (the program) disallowed?
+\end{itemize}
+
+\subsubsection{rumrun}
+
+\begin{itemize}
+    \item Is a program executed in the exact order specified by the binary?
+    \item Do jumps (using instruction 13) land at the correct instruction?
+\end{itemize}
+
+\subsubsection{rumio}
+
+\begin{itemize}
+    \item Does the input prompt terminate when and only when explicitly signaled to?
+    \item Does the program halt gracefully when asked to output a value larger than 255?
+    \item Does the program halt gracefully when given an input value greater than 255 (i.e. a non-ASCII character)?
+\end{itemize}
+
+\subsection{Functional testing}
+
+The above unit tests will be supplemented by comprehensive start-to-finish testing---that is, testing that the program as a whole performs a certain way based on the provided input.
+The use of a debugger will assist in finding bugs that the unit tests may have missed, should the program behave unexpectedly.
+
+\end{document}
